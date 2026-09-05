@@ -212,24 +212,43 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- WINDOW MANAGEMENT (DRAG AND SNAP) ---
   function setupWindowPositions() {
-    // Position windows absolutely relative to the viewport
-    const stackWidth = 380;
-    const stackHeight = 640;
-    const centerX = (window.innerWidth - stackWidth) / 2;
-    const centerY = Math.max(10, (window.innerHeight - stackHeight) / 2);
+    const isMobile = window.innerWidth <= 600;
+    const winWidth = Math.min(380, window.innerWidth - 20);
 
-    windows.forEach(win => {
-      // Append directly to body to guarantee viewport-relative absolute positioning
-      document.body.appendChild(win);
+    if (isMobile) {
+      const mobileTops = {
+        main: 15,
+        equalizer: 320,
+        playlist: 460,
+        cue: 600
+      };
+      windows.forEach(win => {
+        document.body.appendChild(win);
+        const winId = win.dataset.windowId;
+        const left = Math.max(10, (window.innerWidth - winWidth) / 2);
+        win.style.position = 'absolute';
+        win.style.width = `${winWidth}px`;
+        win.style.left = `${left}px`;
+        win.style.top = `${mobileTops[winId] || 15}px`;
+        win.style.margin = '0';
+      });
+    } else {
+      const stackWidth = 380;
+      const stackHeight = 640;
+      const centerX = Math.max(10, (window.innerWidth - stackWidth) / 2);
+      const centerY = Math.max(10, (window.innerHeight - stackHeight) / 2);
 
-      const winId = win.dataset.windowId;
-      const pos = windowPositions[winId];
+      windows.forEach(win => {
+        document.body.appendChild(win);
+        const winId = win.dataset.windowId;
+        const pos = windowPositions[winId];
 
-      win.style.position = 'absolute';
-      win.style.left = `${centerX + pos.left}px`;
-      win.style.top = `${centerY + pos.top}px`;
-      win.style.margin = '0';
-    });
+        win.style.position = 'absolute';
+        win.style.left = `${Math.max(10, centerX + pos.left)}px`;
+        win.style.top = `${Math.max(10, centerY + pos.top)}px`;
+        win.style.margin = '0';
+      });
+    }
   }
 
   function setupDraggableWindows() {
@@ -238,76 +257,98 @@ document.addEventListener('DOMContentLoaded', () => {
     windows.forEach(win => {
       const titlebar = win.querySelector('.window-titlebar');
 
-      titlebar.addEventListener('mousedown', (e) => {
-        // Only trigger drag if clicked titlebar handle or titlebar (exclude control buttons)
-        if (e.target.closest('.win-btn')) return;
+      function initiateDrag(clientX, clientY, target) {
+        if (target.closest('.win-btn')) return;
 
-        // Ensure AudioContext is initialized on click
         if (audioContext && audioContext.state === 'suspended') {
           audioContext.resume();
         }
 
         win.classList.add('is-dragging');
 
-        // Move this window to the front
+        // Move window to front
         windows.forEach(w => w.style.zIndex = '10');
         win.style.zIndex = '100';
 
         const rect = win.getBoundingClientRect();
-        const offsetX = e.clientX - rect.left;
-        const offsetY = e.clientY - rect.top;
+        const offsetX = clientX - rect.left;
+        const offsetY = clientY - rect.top;
 
-        function onMouseMove(moveEvent) {
-          let targetLeft = moveEvent.clientX - offsetX;
-          let targetTop = moveEvent.clientY - offsetY;
+        function handleMove(moveClientX, moveClientY) {
+          let targetLeft = moveClientX - offsetX;
+          let targetTop = moveClientY - offsetY;
 
           // SNAP LOGIC
-          // Check snap to other windows
           windows.forEach(otherWin => {
             if (otherWin === win || otherWin.style.display === 'none') return;
-
             const otherRect = otherWin.getBoundingClientRect();
 
-            // Vertical Snap (snap to other's bottom/top or align left/right)
+            // Vertical Snap
             if (Math.abs(targetLeft - otherRect.left) < snapThreshold) {
-              targetLeft = otherRect.left; // Align left edges
+              targetLeft = otherRect.left;
             } else if (Math.abs((targetLeft + rect.width) - (otherRect.left + otherRect.width)) < snapThreshold) {
-              targetLeft = otherRect.left + otherRect.width - rect.width; // Align right edges
+              targetLeft = otherRect.left + otherRect.width - rect.width;
             } else if (Math.abs((targetLeft + rect.width) - otherRect.left) < snapThreshold) {
-              targetLeft = otherRect.left - rect.width; // Snap right of current to left of other
+              targetLeft = otherRect.left - rect.width;
             } else if (Math.abs(targetLeft - (otherRect.left + otherRect.width)) < snapThreshold) {
-              targetLeft = otherRect.left + otherRect.width; // Snap left of current to right of other
+              targetLeft = otherRect.left + otherRect.width;
             }
 
             // Horizontal Snap
             if (Math.abs(targetTop - otherRect.top) < snapThreshold) {
-              targetTop = otherRect.top; // Align top edges
+              targetTop = otherRect.top;
             } else if (Math.abs((targetTop + rect.height) - (otherRect.top + otherRect.height)) < snapThreshold) {
-              targetTop = otherRect.top + otherRect.height - rect.height; // Align bottom edges
+              targetTop = otherRect.top + otherRect.height - rect.height;
             } else if (Math.abs((targetTop + rect.height) - otherRect.top) < snapThreshold) {
-              targetTop = otherRect.top - rect.height; // Snap bottom of current to top of other
+              targetTop = otherRect.top - rect.height;
             } else if (Math.abs(targetTop - (otherRect.top + otherRect.height)) < snapThreshold) {
-              targetTop = otherRect.top + otherRect.height; // Snap top of current to bottom of other
+              targetTop = otherRect.top + otherRect.height;
             }
           });
 
           // Bounds safety
-          targetLeft = Math.max(10, Math.min(window.innerWidth - rect.width - 10, targetLeft));
-          targetTop = Math.max(10, Math.min(window.innerHeight - rect.height - 10, targetTop));
+          targetLeft = Math.max(5, Math.min(window.innerWidth - rect.width - 5, targetLeft));
+          targetTop = Math.max(5, Math.min(window.innerHeight - rect.height - 5, targetTop));
 
           win.style.left = `${targetLeft}px`;
           win.style.top = `${targetTop}px`;
         }
 
-        function onMouseUp() {
+        function onMouseMove(moveEvent) {
+          handleMove(moveEvent.clientX, moveEvent.clientY);
+        }
+
+        function onTouchMove(touchEvent) {
+          if (touchEvent.touches.length > 0) {
+            handleMove(touchEvent.touches[0].clientX, touchEvent.touches[0].clientY);
+          }
+        }
+
+        function stopDrag() {
           win.classList.remove('is-dragging');
           document.removeEventListener('mousemove', onMouseMove);
-          document.removeEventListener('mouseup', onMouseUp);
+          document.removeEventListener('mouseup', stopDrag);
+          document.removeEventListener('touchmove', onTouchMove);
+          document.removeEventListener('touchend', stopDrag);
+          document.removeEventListener('touchcancel', stopDrag);
         }
 
         document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchmove', onTouchMove, { passive: true });
+        document.addEventListener('touchend', stopDrag);
+        document.addEventListener('touchcancel', stopDrag);
+      }
+
+      titlebar.addEventListener('mousedown', (e) => {
+        initiateDrag(e.clientX, e.clientY, e.target);
       });
+
+      titlebar.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 0) {
+          initiateDrag(e.touches[0].clientX, e.touches[0].clientY, e.target);
+        }
+      }, { passive: true });
     });
   }
 

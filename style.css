@@ -1472,3 +1472,99 @@ input[type="range"].vertical-slider:active::-webkit-slider-thumb {
 .rave-bouncing {
   transition: all 0.15s ease-in-out;
 }
+
+/* ==========================================================================
+   Mobile & Small Screen Responsiveness
+   ========================================================================== */
+@media (max-width: 600px) {
+  body {
+    padding: 8px 4px;
+    align-items: flex-start;
+    overflow-x: hidden;
+  }
+
+  #winamp-container {
+    width: 100%;
+    max-width: calc(100vw - 12px);
+  }
+
+  .winamp-window {
+    width: calc(100vw - 12px) !important;
+    max-width: 400px;
+    border-radius: 10px;
+  }
+
+  .window-titlebar {
+    height: 32px;
+    padding: 0 8px;
+  }
+
+  .win-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 0.85rem;
+  }
+
+  .action-btn {
+    min-width: 40px;
+    height: 36px;
+  }
+
+  .toggle-btn {
+    padding: 5px 10px;
+    font-size: 0.7rem;
+  }
+
+  #bg-visualizer-controls {
+    bottom: 8px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: calc(100vw - 16px);
+    max-width: 420px;
+    padding: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 12px;
+  }
+
+  .bg-preset-buttons {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .bg-preset-btn {
+    padding: 4px 8px;
+    font-size: 0.6rem;
+  }
+
+  .bg-controls-label {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.65rem;
+  }
+
+  #dual-app-wrapper {
+    width: 95%;
+    height: auto;
+    min-height: 90vh;
+    padding: 10px 0;
+  }
+
+  .header-nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .dual-title {
+    font-size: 1.1rem;
+  }
+
+  .volume-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
