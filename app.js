@@ -123,8 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Add default track
     const defaultTrack = {
-      name: "עומרי ותומר הרקדנים",
-      url: "./עומרי ותומר הרקדנים.mp3",
+      name: "Where Is My Husband",
+      url: "./where_is_my_husband.mp3",
       duration: 0 // Will load on metadata load
     };
     addTrackToPlaylist(defaultTrack);
