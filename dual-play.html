@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HyperPulse - Dual Sync Engine</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="dual-play-body">
+
+  <!-- Animated Background -->
+  <div class="dual-play-bg"></div>
+
+  <div id="dual-app-wrapper">
+
+    <div class="header-nav">
+      <a href="index.html" class="back-link">
+        <svg viewBox="0 0 24 24" width="24" height="24">
+          <path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
+        </svg>
+        BACK TO DECK
+      </a>
+      <h1 class="dual-title">HYPERPULSE // DUAL SYNC</h1>
+    </div>
+
+    <div class="dual-content-grid">
+      <!-- Video Container -->
+      <div class="video-container glass-panel">
+        <div class="video-wrapper">
+          <div id="youtube-player"></div>
+        </div>
+      </div>
+
+      <!-- Audio & Controls -->
+      <div class="audio-controls-container glass-panel">
+        <div class="track-info">
+          <h2 class="track-name">עומרי ותומר הרקדנים</h2>
+          <p class="track-status" id="sync-status">Initializing Synchronization...</p>
+        </div>
+
+        <div class="unified-controls">
+          <button class="action-btn" id="dual-btn-play" title="Play Both" disabled>
+            <svg viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </button>
+          <button class="action-btn" id="dual-btn-pause" title="Pause Both" disabled>
+            <svg viewBox="0 0 24 24">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
+            </svg>
+          </button>
+          <button class="action-btn" id="dual-btn-stop" title="Stop & Reset" disabled>
+            <svg viewBox="0 0 24 24">
+              <path d="M6 6h12v12H6z" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="seek-row dual-seek-row">
+          <span class="seek-current-time" id="dual-seek-current">00:00</span>
+          <div class="seek-slider-wrapper">
+            <input type="range" id="dual-seek-slider" min="0" max="100" value="0" step="0.1" title="Seek Both">
+          </div>
+          <span class="seek-duration" id="dual-seek-total">00:00</span>
+        </div>
+
+        <div class="volume-controls">
+          <div class="control-group">
+            <label for="yt-volume">YT VOL</label>
+            <input type="range" id="yt-volume" min="0" max="100" value="100">
+          </div>
+          <div class="control-group">
+            <label for="mp3-volume">MP3 VOL</label>
+            <input type="range" id="mp3-volume" min="0" max="1" step="0.01" value="1">
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Note: Make sure the path matches where the file actually is. Assuming 'Music/עומרי ותומר הרקדנים.mp3' based on previous track lists, but let's just use the filename if it's in the same dir, or we can fetch the blob. Wait, in app.js, how are files loaded? The user drag & drops them or we have default ones. 
+  Let's use a relative path but if it fails, it will be obvious. -->
+  <audio id="dual-audio-element" src="עומרי ותומר הרקדנים.mp3" preload="auto"></audio>
+
+  <!-- Main Logic -->
+  <script src="dual-play.js"></script>
+  <!-- YouTube IFrame API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+</body>
+
+</html>

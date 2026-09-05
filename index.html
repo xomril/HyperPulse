@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HyperPulse - Next-Gen Audio Engine</title>
+  <!-- Google Fonts for Futuristic Cyber Glass UI -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800;900&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Full-screen Background Visualizer Canvas -->
+  <canvas id="bg-visualizer-canvas"></canvas>
+
+  <!-- Drag-and-drop global overlay -->
+  <div id="drop-overlay" class="hidden">
+    <div class="drop-message">
+      <svg class="drop-icon" viewBox="0 0 24 24">
+        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+      </svg>
+      <span>Drop audio files to load into HyperPulse</span>
+    </div>
+  </div>
+
+  <div id="app-wrapper">
+    <!-- Main Player Container -->
+    <div id="winamp-container">
+      
+      <!-- 1. MAIN PLAYER WINDOW -->
+      <div id="main-window" class="winamp-window draggable-window" data-window-id="main">
+        <div class="window-titlebar">
+          <div class="titlebar-handle">
+            <svg class="hyperpulse-logo" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--neon-cyan)" stroke-width="2.5">
+              <path d="M2 12h4l3-9 4 18 3-9h4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="window-title">HYPERPULSE // DECK 01</span>
+            <a href="dual-play.html" class="sync-play-link" title="Go to Dual Playback Page">SYNC PLAY</a>
+          </div>
+          <div class="window-controls">
+            <button class="win-btn minimize-btn" title="Minimize">—</button>
+            <button class="win-btn shade-btn" title="Toggle Shade" id="main-shade-toggle">▤</button>
+            <button class="win-btn close-btn" title="Close">×</button>
+          </div>
+        </div>
+
+        <div class="window-body main-body">
+          <!-- Display Panel (Digital Info, Visualizer, Time) -->
+          <div class="display-panel">
+            <div class="display-top">
+              <div class="song-info">
+                <span class="song-title-marquee" id="song-title">Loading track...</span>
+              </div>
+              <div class="time-container" id="time-display" title="Click to toggle Elapsed/Remaining">
+                <span class="time-minus" id="time-sign"></span>
+                <span class="time-numbers" id="time-val">00:00</span>
+              </div>
+            </div>
+
+            <div class="display-bottom">
+              <!-- Visualizer Panel -->
+              <div class="visualizer-container">
+                <canvas id="visualizer-canvas" width="152" height="32"></canvas>
+                <div class="visualizer-modes">
+                  <span class="viz-mode active" data-mode="spectrum" title="Frequency Spectrum">SPEC</span>
+                  <span class="viz-mode" data-mode="oscilloscope" title="Waveform Oscilloscope">WAVE</span>
+                  <span class="viz-mode" data-mode="spectrogram" title="Spectrogram Heatmap">HEAT</span>
+                  <span class="viz-mode" data-mode="vortex" title="Circular Vector Spectrum">VORTEX</span>
+                </div>
+              </div>
+
+              <!-- Audio Info Indicators -->
+              <div class="audio-indicators">
+                <div class="indicator-row">
+                  <span class="indicator active" id="indicator-kbps">192 kbps</span>
+                  <span class="indicator active" id="indicator-khz">44 kHz</span>
+                </div>
+                <div class="indicator-row">
+                  <span class="indicator active" id="indicator-stereo">STEREO</span>
+                  <span class="indicator" id="indicator-mono">MONO</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls Section -->
+          <div class="controls-panel">
+            <!-- Sliders for Volume and Panning -->
+            <div class="slider-row">
+              <div class="control-group volume-group">
+                <label for="volume-slider">VOL</label>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.7" title="Volume">
+                <span class="control-value" id="volume-val">70%</span>
+              </div>
+              <div class="control-group balance-group">
+                <label for="balance-slider">BAL</label>
+                <input type="range" id="balance-slider" min="-1" max="1" step="0.1" value="0" title="Balance (L/R)">
+                <span class="control-value" id="balance-val">0</span>
+              </div>
+            </div>
+
+            <!-- Toggle Buttons for EQ, PL and CUE -->
+            <div class="toggle-buttons-row">
+              <button class="toggle-btn active" id="toggle-eq" title="Toggle Equalizer Window">EQ</button>
+              <button class="toggle-btn active" id="toggle-pl" title="Toggle Playlist Window">PL</button>
+              <button class="toggle-btn active" id="toggle-cue" title="Toggle Cue Points Manager">CUE</button>
+              <div class="playback-speed-group">
+                <label for="speed-slider">SPD</label>
+                <input type="range" id="speed-slider" min="0.5" max="2.0" step="0.05" value="1.0" title="Playback Speed">
+                <span class="speed-val" id="speed-val">1.0x</span>
+              </div>
+            </div>
+
+            <!-- Position Seek bar with Cue markers overlay -->
+            <div class="seek-row">
+              <span class="seek-current-time" id="seek-current">00:00</span>
+              <div class="seek-slider-wrapper">
+                <input type="range" id="seek-slider" min="0" max="100" value="0" step="0.1" title="Seek">
+                <div class="seek-cue-markers-track" id="seek-cue-track"></div>
+              </div>
+              <span class="seek-duration" id="seek-total">00:00</span>
+              <button class="seek-cue-btn" id="btn-quick-cue" title="Bookmark Cue Point at Current Position">+CUE</button>
+            </div>
+
+            <!-- Playback Action Buttons -->
+            <div class="action-buttons-row">
+              <button class="action-btn" id="btn-prev" title="Previous Track">
+                <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6L18 18V6z"/></svg>
+              </button>
+              <button class="action-btn" id="btn-play" title="Play">
+                <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+              </button>
+              <button class="action-btn" id="btn-pause" title="Pause">
+                <svg viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+              </button>
+              <button class="action-btn" id="btn-stop" title="Stop">
+                <svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+              </button>
+              <button class="action-btn" id="btn-next" title="Next Track">
+                <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6zm9-12v12h2V6z"/></svg>
+              </button>
+              <button class="action-btn eject-btn" id="btn-eject" title="Open File(s)">
+                <svg viewBox="0 0 24 24"><path d="M5 17h14v2H5zm7-12L5.33 13h13.34z"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. EQUALIZER WINDOW -->
+      <div id="equalizer-window" class="winamp-window draggable-window" data-window-id="equalizer">
+        <div class="window-titlebar">
+          <div class="titlebar-handle">
+            <svg class="hyperpulse-logo" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--neon-cyan)" stroke-width="2.5">
+              <path d="M2 12h4l3-9 4 18 3-9h4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="window-title">SPECTRUM MATRIX // EQ</span>
+          </div>
+          <div class="window-controls">
+            <button class="win-btn minimize-btn" title="Minimize">—</button>
+            <button class="win-btn close-btn" id="close-eq-btn" title="Close">×</button>
+          </div>
+        </div>
+
+        <div class="window-body eq-body">
+          <div class="eq-header">
+            <button class="eq-power active" id="eq-power-btn" title="Toggle Equalizer On/Off">POWER</button>
+            <div class="eq-preset-container">
+              <label for="eq-preset-select">PRESET:</label>
+              <select id="eq-preset-select">
+                <option value="flat">Flat</option>
+                <option value="rock">Rock</option>
+                <option value="pop">Pop</option>
+                <option value="techno">Techno</option>
+                <option value="classical">Classical</option>
+                <option value="jazz">Jazz</option>
+                <option value="vocal">Vocal Booster</option>
+                <option value="bass">Bass Booster</option>
+              </select>
+            </div>
+            <button class="eq-flat-btn" id="eq-reset-btn" title="Reset to Flat">RESET</button>
+          </div>
+
+          <div class="eq-sliders-container">
+            <!-- Preamp Slider -->
+            <div class="eq-slider-group preamp-group">
+              <span class="eq-label">PRE</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider" id="eq-preamp" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value" id="eq-preamp-val">0dB</span>
+            </div>
+
+            <div class="eq-divider"></div>
+
+            <!-- 10 frequency bands -->
+            <div class="eq-slider-group">
+              <span class="eq-label">32</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="0" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+            <div class="eq-slider-group">
+              <span class="eq-label">64</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="1" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+            <div class="eq-slider-group">
+              <span class="eq-label">125</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="2" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+            <div class="eq-slider-group">
+              <span class="eq-label">250</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="3" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+            <div class="eq-slider-group">
+              <span class="eq-label">500</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="4" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+            <div class="eq-slider-group">
+              <span class="eq-label">1K</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="5" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+            <div class="eq-slider-group">
+              <span class="eq-label">2K</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="6" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+            <div class="eq-slider-group">
+              <span class="eq-label">4K</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="7" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+            <div class="eq-slider-group">
+              <span class="eq-label">8K</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="8" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+            <div class="eq-slider-group">
+              <span class="eq-label">16K</span>
+              <div class="eq-slider-wrapper">
+                <input type="range" class="eq-slider vertical-slider band-slider" data-band="9" min="-12" max="12" step="1" value="0" orient="vertical">
+              </div>
+              <span class="eq-slider-value">0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. PLAYLIST WINDOW -->
+      <div id="playlist-window" class="winamp-window draggable-window" data-window-id="playlist">
+        <div class="window-titlebar">
+          <div class="titlebar-handle">
+            <svg class="hyperpulse-logo" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--neon-cyan)" stroke-width="2.5">
+              <path d="M2 12h4l3-9 4 18 3-9h4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="window-title">AUDIO QUEUE // LIST</span>
+          </div>
+          <div class="window-controls">
+            <button class="win-btn minimize-btn" title="Minimize">—</button>
+            <button class="win-btn close-btn" id="close-pl-btn" title="Close">×</button>
+          </div>
+        </div>
+
+        <div class="window-body playlist-body">
+          <div class="playlist-items-container" id="playlist-list">
+            <!-- Playlist items will be injected here by app.js -->
+          </div>
+
+          <div class="playlist-footer">
+            <div class="playlist-actions-left">
+              <button class="footer-btn" id="pl-add-btn" title="Add files to playlist">ADD</button>
+              <button class="footer-btn" id="pl-rem-btn" title="Remove selected track">REM</button>
+              <button class="footer-btn" id="pl-clear-btn" title="Clear all tracks">CLEAR</button>
+            </div>
+            <div class="playlist-info" id="pl-info-display">
+              0 tracks [00:00]
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. CUE POINTS WINDOW -->
+      <div id="cue-window" class="winamp-window draggable-window" data-window-id="cue">
+        <div class="window-titlebar">
+          <div class="titlebar-handle">
+            <svg class="hyperpulse-logo" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="var(--neon-cyan)" stroke-width="2.5">
+              <path d="M2 12h4l3-9 4 18 3-9h4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="window-title">TIMEMARK // CUES</span>
+          </div>
+          <div class="window-controls">
+            <button class="win-btn minimize-btn" title="Minimize">—</button>
+            <button class="win-btn close-btn" id="close-cue-btn" title="Close">×</button>
+          </div>
+        </div>
+
+        <div class="window-body cue-body">
+          <div class="cue-header">
+            <button class="cue-action-btn primary" id="cue-add-current-btn" title="Add cue point at current playback position">+ ADD CUE</button>
+            <button class="cue-action-btn" id="cue-clear-all-btn" title="Clear all cue points for current track">CLEAR ALL</button>
+          </div>
+
+          <div class="cue-items-container" id="cue-list">
+            <!-- Cue items injected by app.js -->
+          </div>
+
+          <div class="cue-footer">
+            <span class="cue-info" id="cue-info-display">0 cue points</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Background Visualizer Floating Toolbar -->
+  <div id="bg-visualizer-controls">
+    <div class="bg-controls-label">
+      <span class="bg-pulse-icon">✨</span>
+      <span>BACKGROUND VISUALS</span>
+    </div>
+    <div class="bg-preset-buttons">
+      <button class="bg-preset-btn active" data-bg-mode="nebula" title="Nebula & Floating Dust">NEBULA</button>
+      <button class="bg-preset-btn" data-bg-mode="grid" title="3D Synthwave Grid">CYBER GRID</button>
+      <button class="bg-preset-btn" data-bg-mode="rings" title="Audio Ripple Rings">SOUND RINGS</button>
+      <button class="bg-preset-btn" data-bg-mode="warp" title="Starfield Hyperdrive">STARFIELD</button>
+      <button class="bg-preset-btn" data-bg-mode="vortex" title="Hyper Plasma Vortex">VORTEX</button>
+    </div>
+    <button class="bg-toggle-btn active" id="bg-vis-toggle" title="Toggle Background Effects">ON</button>
+  </div>
+
+  <!-- Hidden HTML5 Audio Element & File Input -->
+  <audio id="audio-element" crossOrigin="anonymous"></audio>
+  <input type="file" id="file-input" multiple accept="audio/*" style="display: none;">
+
+  <!-- Scripts -->
+  <script src="visualizer.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
