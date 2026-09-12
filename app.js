@@ -1232,13 +1232,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // Keyboard shortcuts for cue points (1-9)
+    // Keyboard shortcuts for cue points (1-9, and 0 for start)
     window.addEventListener('keydown', (e) => {
       // Ignore if typing in an input
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
       const num = parseInt(e.key);
-      if (num >= 1 && num <= 9) {
+      if (num === 0) {
+        jumpToCue(0);
+      } else if (num >= 1 && num <= 9) {
         const cues = getCurrentTrackCues();
         if (cues && cues.length >= num) {
           jumpToCue(cues[num - 1].time);
