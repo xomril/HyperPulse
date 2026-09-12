@@ -1231,6 +1231,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
+
+    // Keyboard shortcuts for cue points (1-9)
+    window.addEventListener('keydown', (e) => {
+      // Ignore if typing in an input
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const num = parseInt(e.key);
+      if (num >= 1 && num <= 9) {
+        const cues = getCurrentTrackCues();
+        if (cues && cues.length >= num) {
+          jumpToCue(cues[num - 1].time);
+        }
+      }
+    });
   }
 
   // Run the app!
